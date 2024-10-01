@@ -21,6 +21,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+#include <nn/ccr/sys.h>
+
 /**
  * Application configuration.
  */
@@ -80,6 +82,25 @@ static void ResetOrientation()
     VPADSetGyroAngle(VPAD_CHAN_0, 0.0f, 0.0f, 0.0f);
     VPADSetGyroDirection(VPAD_CHAN_0, &dir_base);
     VPADSetGyroDirReviseBase(VPAD_CHAN_0, &dir_base);
+}
+
+
+/**
+ * Set DRC brightness mode, to save battery.
+ * @param mode The brightness mode, true for 1, false for 4.
+ */
+void setDRCBrightness(bool mode) {
+    int32_t result;
+
+    // Set DRC brightness
+    if (mode) {
+        // Set brightness to 1
+        result = CCRSysSetCurrentLCDMode(1);
+    }
+    else {
+        // Set brightness to 4
+        result = CCRSysSetCurrentLCDMode(4);
+    }
 }
 
 /**
@@ -228,24 +249,16 @@ int main(int argc, char **argv)
         // Output the IP address
         char * msg_connected = (char*)malloc(255);
         snprintf(msg_connected, 255, "Connected to %s:%d", IP_ADDRESS, Port);
-
-        // Print to TV
-        PrintHeader(SCREEN_TV);
-        OSScreenPutFontEx(SCREEN_TV, 0, 5, msg_connected);
-        OSScreenPutFontEx(SCREEN_TV, 0, 7, "Remember the program will not work without");
-        OSScreenPutFontEx(SCREEN_TV, 0, 8, "UsendMii running on your computer.");
-        OSScreenPutFontEx(SCREEN_TV, 0, 9, "You can get UsendMii from http://wiiubrew.org/wiki/UsendMii");
-        OSScreenPutFontEx(SCREEN_TV, 0, 16, "Hold the HOME button to exit.");
-
         // Print to DRC
         PrintHeader(SCREEN_DRC);
         OSScreenPutFontEx(SCREEN_DRC, 0, 5, msg_connected);
-        OSScreenPutFontEx(SCREEN_DRC, 0, 7, "Remember the program will not work without");
-        OSScreenPutFontEx(SCREEN_DRC, 0, 8, "UsendMii running on your computer.");
-        OSScreenPutFontEx(SCREEN_DRC, 0, 9, "You can get UsendMii from http://wiiubrew.org/wiki/UsendMii");
+        OSScreenPutFontEx(SCREEN_DRC, 0, 7, "Seting DRC screen brightness to 1...");
         OSScreenPutFontEx(SCREEN_DRC, 0, 16, "Hold the HOME button to exit.");
 
         ConsoleDrawEnd();
+
+        // Set DRC brightness to 1
+        setDRCBrightness(true);
 
         free(msg_connected);
     }
@@ -267,11 +280,24 @@ int main(int argc, char **argv)
 
     uint16_t holdTime = 0;
 
+    int32_t kpad_error1 = 0;
+    int32_t kpad_error2 = 0;
+    int32_t kpad_error3 = 0;
+    int32_t kpad_error4 = 0;
+
+    int32_t hpad_error1 = 0;
+    int32_t hpad_error2 = 0;
+    int32_t hpad_error3 = 0;
+    int32_t hpad_error4 = 0;
+
+    // DRC touch screen resolution
+    VPADTouchPadResolution touchpad_resolution = VPAD_TP_854X480;
+
     while(running == true) {
-        int32_t kpad_error1 = -6;
-        int32_t kpad_error2 = -6;
-        int32_t kpad_error3 = -6;
-        int32_t kpad_error4 = -6;
+        kpad_error1 = -6;
+        kpad_error2 = -6;
+        kpad_error3 = -6;
+        kpad_error4 = -6;
         KPADStatus kpad_data1;
         KPADStatus kpad_data2;
         KPADStatus kpad_data3;
@@ -291,10 +317,10 @@ int main(int argc, char **argv)
         KPADReadEx(WPAD_CHAN_3, &kpad_data4, 1, &kpad_error4);
 
         // Read the HPADs
-        int32_t hpad_error1 = HPADRead(HPAD_CHAN_0, &hpad_data1[0], 16);
-        int32_t hpad_error2 = HPADRead(HPAD_CHAN_1, &hpad_data2[0], 16);
-        int32_t hpad_error3 = HPADRead(HPAD_CHAN_2, &hpad_data3[0], 16);
-        int32_t hpad_error4 = HPADRead(HPAD_CHAN_3, &hpad_data4[0], 16);
+        hpad_error1 = HPADRead(HPAD_CHAN_0, &hpad_data1[0], 16);
+        hpad_error2 = HPADRead(HPAD_CHAN_1, &hpad_data2[0], 16);
+        hpad_error3 = HPADRead(HPAD_CHAN_2, &hpad_data3[0], 16);
+        hpad_error4 = HPADRead(HPAD_CHAN_3, &hpad_data4[0], 16);
 
         // Flush the cache (may be needed due to continuous refresh of the data ?)
         DCFlushRange(&vpad_data, sizeof(VPADStatus));
@@ -335,13 +361,13 @@ int main(int argc, char **argv)
         {
             pad_data.hpad[3] = &hpad_data4[0];
         }
-        pad_to_json(pad_data, msg_data, sizeof(msg_data));
+
+        pad_to_json(pad_data, msg_data, sizeof(msg_data), touchpad_resolution);
 
         // Send the message
         udp_print(msg_data);
 
-        // Make a small delay to prevent filling up the computer receive buffer
-        OSSleepTicks(OSMillisecondsToTicks(10)); // Make this value smaller for faster refreshing
+        OSSleepTicks(OSMillisecondsToTicks(8));
 
         // Check for exit signal
         if (vpad_data.hold & VPAD_BUTTON_HOME && ++holdTime > 500) {
@@ -349,6 +375,8 @@ int main(int argc, char **argv)
                 running = false;
             }
             else {
+                // reset DRC brightness to level 4
+                setDRCBrightness(false);
                 SYSLaunchMenu();
                 running = WHBProcIsRunning();
             }

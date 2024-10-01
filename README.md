@@ -1,3 +1,9 @@
+# information about this fork
+
+* When a connection is initiated, the brightness of the Wii U Gamepad goes to level 1, to save battery life, returning to value 4 when you exit the app.
+* data sending is done every 8 ms, instead of 10 ms.
+* New logo and image when starting the app.
+
 # MiisendU Wii U
 
 [![GitHub Badge](https://github.com/Crayon2000/MiisendU-Wii-U/workflows/Continuous%20Integration/badge.svg)](https://github.com/Crayon2000/MiisendU-Wii-U/actions)

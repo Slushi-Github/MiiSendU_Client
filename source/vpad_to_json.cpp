@@ -40,11 +40,12 @@ static const std::map gcmask = {
  * @param[in] pad_data Controllers data.
  * @param[out] out Buffer where to copy the formatted data.
  * @param[in] out_size Size of the out buffer.
+ * @param[in] resolution Resolution of the touch pad.
  */
-void pad_to_json(PADData pad_data, char* out, uint32_t out_size)
+void pad_to_json(PADData pad_data, char* out, uint32_t out_size, VPADTouchPadResolution resolution)
 {
     VPADTouchData TPCalibrated;
-    VPADGetTPCalibratedPointEx(VPAD_CHAN_0, VPAD_TP_854X480, &TPCalibrated, &pad_data.vpad->tpNormal);
+    VPADGetTPCalibratedPointEx(VPAD_CHAN_0, resolution, &TPCalibrated, &pad_data.vpad->tpNormal);
 
     json_t *root = json_object();
 

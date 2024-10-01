@@ -19,7 +19,7 @@ typedef struct {
     HPADStatus* hpad[4];  /**< USB Gamecube Controller Adapter. */
 } PADData;
 
-void pad_to_json(PADData pad_data, char* out, uint32_t out_size);
+void pad_to_json(PADData pad_data, char* out, uint32_t out_size, VPADTouchPadResolution resolution);
 
 #ifdef __cplusplus
 }
