@@ -3,6 +3,7 @@
 * When a connection is initiated, the brightness of the Wii U Gamepad goes to level 1, to save battery life, returning to value 4 when you exit the app.
 * data sending is done every 8 ms, instead of 10 ms.
 * New logo and image when starting the app.
+  ![](https://github.com/Slushi-Github/MiiSendU_Client/blob/master/DRCImage.png)
 
 # MiisendU Wii U
 
